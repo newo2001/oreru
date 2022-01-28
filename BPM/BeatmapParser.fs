@@ -1,7 +1,7 @@
-﻿namespace BeatmapParser
+﻿namespace BPM
 
 open System
-open BeatmapParser.Map
+open BPM.Map
 open FParsec
 
 module Parser =
@@ -106,7 +106,7 @@ module Parser =
         let number = pint32 .>> pchar ','
         
         let nc = number >>= fun t ->
-            let hasNC = t &&& 0b00000100 = 0b00000100
+            let hasNC = (t &&& 0b00000100) <> 0
             if t &&& objectType = objectType
             then preturn hasNC
             else fail ("Wrong HitObjectType! expected: " + (string objectType) + ", got: " + (string t))
@@ -369,7 +369,7 @@ module Parser =
         
         pipe5 versionHeader (tuple4 settings editor metadata (difficulty .>> events)) parseTimingPoints parseColors parseHitObjects createBeatmap
         
-    let ParseBeatmap content =
+    let ParseBeatmap content: Map.Beatmap =
         match run parseBeatmap content with
         | Success(map, _, _) -> map
         | Failure(err, _, _) -> raise (Exception(err))

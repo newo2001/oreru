@@ -6,12 +6,16 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <Compile Include="Replay.fs" />
         <Compile Include="Beatmap.fs" />
+        <Compile Include="ReplayParser.fs" />
         <Compile Include="BeatmapParser.fs" />
     </ItemGroup>
 
     <ItemGroup>
       <PackageReference Include="FParsec" Version="1.1.1" />
+      <PackageReference Include="LZMA-SDK" Version="19.0.0" />
+      <PackageReference Include="SharpCompress" Version="0.30.1" />
     </ItemGroup>
 
 </Project>

@@ -1,4 +1,4 @@
-﻿namespace BeatmapParser
+﻿namespace BPM
 
 module Map =
     type Color = byte * byte * byte
