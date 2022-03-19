@@ -1,9 +1,9 @@
 ﻿namespace BPM
 
 open System
-open Replay
+open System.IO
+open BPM.Replay
 open FParsec
-open SevenZip
 open SharpCompress.Compressors.LZMA
 
 module ReplayParser =
@@ -19,13 +19,15 @@ module ReplayParser =
     }
     
     let extendedAscii = Text.Encoding.GetEncoding(28591)
-
-    let pbytes n: Parser<byte array> =
-        parray n anyChar |>> extendedAscii.GetBytes
-
+    
     let pbyte: Parser<byte> =
-        pbytes 1
-        |>> (fun x -> Array.head x |> byte)
+        fun stream ->
+            let c = stream.Read()
+            if c <> EOS then Reply(byte <| c)
+            else Reply(Error, messageError "Expected Any Char")
+    
+    let pbytes n: Parser<byte array> =
+        parray n pbyte
 
     let pshort: Parser<int16> =
         pbytes 2
@@ -102,68 +104,34 @@ module ReplayParser =
                 timestamp = time
                 cursor = (x, y)
                 keys = LanguagePrimitives.EnumOfValue keys
-            })
+            }) .>> pchar ','
             
-
-        //let decoder = Compression.LZMA.Decoder()
         pint >>= pbytes >>= (fun data ->
-            (**let input = new IO.MemoryStream (data)
-            input.Seek(0, IO.SeekOrigin.Begin) |> ignore
-
-            let props = Array.zeroCreate<byte> 5
-            input.Read props |> ignore
-
-            let decoder = Compression.LZMA.Decoder();
-            decoder.SetDecoderProperties(props);
-
-            let mutable decodedSize = 0
-            for i in 0..7 do
-                decodedSize <- (decodedSize ||| (input.ReadByte() <<< (i * 8)))
-
-            (**let mutable encodedSize = 0
-            for i in 0..7 do
-                encodedSize <- (encodedSize ||| (input.ReadByte() <<< (i * 8)))**)
+            let stream = new MemoryStream(data)
+            let reader = new BinaryReader(stream)
+            let props = reader.ReadBytes 5
+            let decompressedSize = reader.ReadInt64()
+            let compressedSize = int64 (stream.Length - stream.Position)
+            let lzma = new LzmaStream(props, stream, compressedSize, decompressedSize + 1L)
             
-            let encodedSize = (int64 data.Length) - input.Position;
-            
-            //let lzma = new LzmaStream(props, input, encodedSize);
-            let output = new IO.MemoryStream();
-            //lzma.CopyTo(output);
-            decoder.Code(input, output, encodedSize, 200, null)**)
-
-            let decoder = Compression.LZMA.Decoder()
-            let inStream = new IO.MemoryStream(data)
-            inStream.Seek(0, IO.SeekOrigin.Begin) |> ignore
-
-            let properties = Array.zeroCreate<byte> 5;
-            if not (inStream.Read(properties, 0, 5) = 5) then
-                failwith "input .lzma is too short" ;
-
-            decoder.SetDecoderProperties(properties);
-
-            let mutable outSize = 0 |> int64
-            let mutable i = 0
-            while i < 8 do
-                let v = int32 (inStream.ReadByte())
-                if v < 0 then
-                    i <- 8
-                else
-                    outSize <- outSize ||| ((v |> byte |> int64) <<< (8 * i));
-                    i <- i + 1
-
-            let compressedSize = inStream.Length - inStream.Position;
-
-            let outStream = new IO.MemoryStream();
-            decoder.Code(inStream, outStream, compressedSize, outSize, null);
-            outStream.Flush();
-            outStream.Position <- 0
-
-            preturn (outStream.ToArray() |> Text.Encoding.UTF8.GetString)
-            //preturn (output.ToArray() |> Text.Encoding.UTF8.GetString)
+            let out = Array.zeroCreate<byte> (int <| decompressedSize);
+            lzma.Read(out, 0, int <| decompressedSize) |> ignore
+            preturn (Text.Encoding.UTF8.GetString out);
         ) >>= (fun decoded ->
-            match run (sepBy parseFrame (pchar ',')) decoded with
-            | Success(frames, _, _) -> preturn frames
-            | Failure(_, _, _) -> failwith "Failed to decode LZMA stream"
+            match run (manyTill parseFrame eof) decoded with
+            | Success(frames, _, _) ->
+                let sumFrames (time, frames) (frame: Frame) = (time + frame.timestamp, {
+                    timestamp = time + frame.timestamp
+                    keys = frame.keys
+                    cursor = frame.cursor
+                }::frames)
+                
+                frames
+                |> List.fold sumFrames (0, [])
+                |> snd
+                |> List.rev
+                |> preturn
+            | Failure(err, _, _) -> failwith ("Failed to parse replay frames: " + err) 
         )
 
     let parseReplay: Parser<Replay> =

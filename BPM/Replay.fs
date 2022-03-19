@@ -27,6 +27,7 @@ module Replay =
 
     [<Flags>]
     type Key =
+        | None = 0
         | LeftMouse = 1
         | RightMouse = 2
         | Key1 = 4
