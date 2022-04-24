@@ -4,3 +4,4 @@
 */obj/
 Sandbox/*
 !Sandbox/Sandbox.csproj
+*.DotSettings.user

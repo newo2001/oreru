@@ -8,13 +8,16 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="NUnit" Version="3.12.0" />
-        <PackageReference Include="NUnit3TestAdapter" Version="3.16.1" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
+        <PackageReference Include="xunit" Version="2.4.2-pre.12" />
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Include="Program.fs" />
+        <Compile Include="StoryboardParserTests.fs" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\BPM\BPM.fsproj" />
     </ItemGroup>
 
 </Project>

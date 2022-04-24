@@ -6,14 +6,21 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <Compile Include="Common.fs" />
+        <Compile Include="BinaryParsers.fs" />
         <Compile Include="Replay.fs" />
         <Compile Include="Beatmap.fs" />
+        <Compile Include="Db.fs" />
         <Compile Include="ReplayParser.fs" />
         <Compile Include="BeatmapParser.fs" />
+        <Compile Include="OsuDbParser.fs" />
+        <Compile Include="Storyboard.fs" />
+        <Compile Include="StoryboardParser.fs" />
     </ItemGroup>
 
     <ItemGroup>
       <PackageReference Include="FParsec" Version="1.1.1" />
+      <PackageReference Include="FParsec-Pipes" Version="1.1.1" />
       <PackageReference Include="LZMA-SDK" Version="19.0.0" />
       <PackageReference Include="SharpCompress" Version="0.30.1" />
     </ItemGroup>
